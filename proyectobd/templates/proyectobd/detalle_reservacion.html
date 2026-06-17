@@ -1,88 +1,122 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Detalle de reservación</title>
-</head>
-<body>
-    <h1>Detalle de reservación</h1>
+{% extends "base.html" %}
 
-    <p><strong>Evento:</strong> {{ reservacion.nombre_evento }}</p>
-    <p><strong>Registra:</strong> {{ reservacion.nombre_registra }}</p>
-    <p><strong>Fecha:</strong> {{ reservacion.fecha_evento }}</p>
-    <p><strong>Horario:</strong> {{ reservacion.hora_inicio }} - {{ reservacion.hora_fin }}</p>
-    <p><strong>Asistentes:</strong> {{ reservacion.asistentes }}</p>
-    <p><strong>Estatus:</strong> {{ reservacion.estatus }}</p>
-    <p><strong>Observaciones:</strong> {{ reservacion.observaciones }}</p>
+{% block title %}{{ reservacion.nombre_evento }}{% endblock %}
 
-    <h3>Acciones</h3>
+{% block content %}
 
-    {% if reservacion.estatus == 'PENDIENTE' %}
-        <form method="post" action="{% url 'confirmar_reservacion' reservacion.id %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit">Confirmar</button>
-        </form>
+  <div class="ticket">
+    <div class="ticket__header">
+      <div>
+        <span class="ticket__eyebrow">Reservación #{{ reservacion.id }}</span>
+        <h1 class="ticket__title">{{ reservacion.nombre_evento }}</h1>
+      </div>
+      <span class="badge badge--{{ reservacion.estatus|lower }}">{{ reservacion.get_estatus_display }}</span>
+    </div>
 
-        <form method="post" action="{% url 'cancelar_reservacion' reservacion.id %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit">Cancelar</button>
-        </form>
-    {% elif reservacion.estatus == 'CONFIRMADA' %}
-        <form method="post" action="{% url 'finalizar_reservacion' reservacion.id %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit">Finalizar</button>
-        </form>
+    <div class="ticket__divider"></div>
 
-        <form method="post" action="{% url 'cancelar_reservacion' reservacion.id %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit">Cancelar</button>
-        </form>
-    {% else %}
-        <p>Esta reservación ya no tiene acciones disponibles.</p>
-    {% endif %}
+    <div class="ticket__body">
 
-    <h3>Salas</h3>
-    <ul>
-        {% for sala in reservacion.salas.all %}
-            <li>{{ sala.nombre }} - Capacidad: {{ sala.capacidad }}</li>
-        {% endfor %}
-    </ul>
+      <div class="ticket__grid">
+        <div>
+          <div class="ticket__field-label">Registra</div>
+          <div class="ticket__field-value">{{ reservacion.nombre_registra }}</div>
+        </div>
+        <div>
+          <div class="ticket__field-label">Fecha</div>
+          <div class="ticket__field-value mono">{{ reservacion.fecha_evento|date:"d/m/Y" }}</div>
+        </div>
+        <div>
+          <div class="ticket__field-label">Horario</div>
+          <div class="ticket__field-value mono">{{ reservacion.hora_inicio|time:"H:i" }} – {{ reservacion.hora_fin|time:"H:i" }}</div>
+        </div>
+        <div>
+          <div class="ticket__field-label">Asistentes</div>
+          <div class="ticket__field-value">{{ reservacion.asistentes }}</div>
+        </div>
+      </div>
 
-    <h3>Requerimientos</h3>
-    {% if reservacion.requerimientos.all %}
-        <ul>
-            {% for requerimiento in reservacion.requerimientos.all %}
-                <li>{{ requerimiento.nombre }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Sin requerimientos.</p>
-    {% endif %}
-    <p>
-        <a href="{% url 'editar_reservacion' reservacion.id %}">Editar reservación</a>
-    </p>
-    <h3>Historial</h3>
+      <div class="ticket__section">
+        <p class="ticket__section-title">Salas</p>
+        <div class="tag-list">
+          {% for sala in reservacion.salas.all %}
+            <span class="tag">{{ sala.nombre }} · {{ sala.capacidad }} pers.</span>
+          {% empty %}
+            <span class="ticket__field-value">Sin salas asignadas.</span>
+          {% endfor %}
+        </div>
+      </div>
 
-    {% with historial=reservacion.historialreservacion_set.all %}
-        {% if historial %}
-            <ul>
-                {% for movimiento in historial %}
-                    <li>
-                        {{ movimiento.fecha_accion }} -
-                        <strong>{{ movimiento.accion }}</strong> -
-                        {{ movimiento.usuario.username }}
-                        {% if movimiento.descripcion %}
-                            - {{ movimiento.descripcion }}
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>Sin historial registrado.</p>
-        {% endif %}
-    {% endwith %}
-    <p>
-        <a href="{% url 'lista_reservaciones' %}">Volver a reservaciones</a>
-    </p>
-</body>
-</html>
+      <div class="ticket__section">
+        <p class="ticket__section-title">Requerimientos</p>
+        <div class="tag-list">
+          {% for requerimiento in reservacion.requerimientos.all %}
+            <span class="tag">{{ requerimiento.nombre }}</span>
+          {% empty %}
+            <span class="ticket__field-value">Sin requerimientos.</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if reservacion.observaciones %}
+        <div class="ticket__section">
+          <p class="ticket__section-title">Observaciones</p>
+          <p class="ticket__field-value">{{ reservacion.observaciones }}</p>
+        </div>
+      {% endif %}
+
+      <div class="ticket__section">
+        <p class="ticket__section-title">Acciones</p>
+        <div class="ticket__actions">
+          {% if reservacion.estatus == 'PENDIENTE' %}
+            <form method="post" action="{% url 'confirmar_reservacion' reservacion.id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--primary">Confirmar</button>
+            </form>
+            <form method="post" action="{% url 'cancelar_reservacion' reservacion.id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--danger">Cancelar</button>
+            </form>
+          {% elif reservacion.estatus == 'CONFIRMADA' %}
+            <form method="post" action="{% url 'finalizar_reservacion' reservacion.id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--primary">Finalizar</button>
+            </form>
+            <form method="post" action="{% url 'cancelar_reservacion' reservacion.id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--danger">Cancelar</button>
+            </form>
+          {% else %}
+            <span class="empty">Esta reservación ya no tiene acciones disponibles.</span>
+          {% endif %}
+          <a href="{% url 'editar_reservacion' reservacion.id %}" class="btn btn--ghost">Editar reservación</a>
+        </div>
+      </div>
+
+      <div class="ticket__section">
+        <p class="ticket__section-title">Historial</p>
+        {% with historial=reservacion.historialreservacion_set.all %}
+          {% if historial %}
+            <div class="timeline">
+              {% for movimiento in historial %}
+                <div class="timeline__item">
+                  <span class="timeline__time">{{ movimiento.fecha_accion|date:"d/m/Y H:i" }}</span>
+                  <span>
+                    <span class="timeline__action">{{ movimiento.accion }}</span>
+                    <span class="timeline__meta"> · {{ movimiento.usuario.username }}{% if movimiento.descripcion %} · {{ movimiento.descripcion }}{% endif %}</span>
+                  </span>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="empty">Sin historial registrado.</p>
+          {% endif %}
+        {% endwith %}
+      </div>
+
+    </div>
+  </div>
+
+  <a href="{% url 'lista_reservaciones' %}" class="link-back">&larr; Volver al tablero</a>
+
+{% endblock %}

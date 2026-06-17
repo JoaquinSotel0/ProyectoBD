@@ -1,59 +1,93 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Reservaciones</title>
-</head>
-<body>
-    <h1>Reservaciones</h1>
+{% extends "base.html" %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
+{% block title %}Tablero · {{ nombre_mes }} {{ anio }}{% endblock %}
+
+{% block content %}
+
+  <section class="board">
+    <div class="board__header">
+      <div>
+        <span class="board__eyebrow">Tablero · {{ anio }}</span>
+        <h1 class="board__month">{{ nombre_mes }}</h1>
+      </div>
+      <div class="board__nav">
+        <a href="?year={{ mes_anterior.year }}&month={{ mes_anterior.month }}" class="board__navbtn" aria-label="Mes anterior">&larr;</a>
+        <a href="?year={{ hoy.year }}&month={{ hoy.month }}" class="board__navbtn board__navbtn--today">Hoy</a>
+        <a href="?year={{ mes_siguiente.year }}&month={{ mes_siguiente.month }}" class="board__navbtn" aria-label="Mes siguiente">&rarr;</a>
+      </div>
+    </div>
+
+    <div class="board__weekdays">
+      <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+    </div>
+
+    <div class="board__grid">
+      {% for semana in semanas %}
+        {% for dia in semana %}
+          <div class="board__cell{% if not dia.es_mes_actual %} board__cell--muted{% endif %}{% if dia.es_hoy %} board__cell--today{% endif %}">
+            <span class="board__daynum">{{ dia.dia }}</span>
+            <div class="board__chips">
+              {% for r in dia.reservaciones %}
+                <a href="{% url 'detalle_reservacion' r.id %}"
+                   class="chip chip--{{ r.estatus|lower }}"
+                   title="{{ r.hora_inicio|time:'H:i' }} · {{ r.nombre_evento }}">
+                  <span class="chip__time">{{ r.hora_inicio|time:'H:i' }}</span>
+                  <span class="chip__name">{{ r.nombre_evento }}</span>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
         {% endfor %}
-    {% endif %}
+      {% endfor %}
+    </div>
 
-    <p>
-        <a href="{% url 'crear_reservacion' %}">Nueva reservación</a>
-    </p>
+    <div class="board__legend">
+      <span class="legend__item"><i class="legend__dot legend__dot--pendiente"></i>Pendiente</span>
+      <span class="legend__item"><i class="legend__dot legend__dot--confirmada"></i>Confirmada</span>
+      <span class="legend__item"><i class="legend__dot legend__dot--cancelada"></i>Cancelada</span>
+      <span class="legend__item"><i class="legend__dot legend__dot--finalizada"></i>Finalizada</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <h2>Listado completo</h2>
+    </div>
 
     {% if reservaciones %}
-        <table border="1" cellpadding="8">
-            <thead>
-                <tr>
-                    <th>Evento</th>
-                    <th>Registra</th>
-                    <th>Fecha</th>
-                    <th>Horario</th>
-                    <th>Asistentes</th>
-                    <th>Salas</th>
-                    <th>Estatus</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for reservacion in reservaciones %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'detalle_reservacion' reservacion.id %}">
-                                {{ reservacion.nombre_evento }}
-                            </a>
-                        </td>
-                        <td>{{ reservacion.nombre_registra }}</td>
-                        <td>{{ reservacion.fecha_evento }}</td>
-                        <td>{{ reservacion.hora_inicio }} - {{ reservacion.hora_fin }}</td>
-                        <td>{{ reservacion.asistentes }}</td>
-                        <td>
-                            {% for sala in reservacion.salas.all %}
-                                {{ sala.nombre }}{% if not forloop.last %}, {% endif %}
-                            {% endfor %}
-                        </td>
-                        <td>{{ reservacion.estatus }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
+      <div class="table-wrap">
+        <table class="board-table">
+          <thead>
+            <tr>
+              <th>Evento</th>
+              <th>Registra</th>
+              <th>Fecha</th>
+              <th>Horario</th>
+              <th>Asistentes</th>
+              <th>Salas</th>
+              <th>Estatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reservacion in reservaciones %}
+              <tr>
+                <td><a href="{% url 'detalle_reservacion' reservacion.id %}">{{ reservacion.nombre_evento }}</a></td>
+                <td>{{ reservacion.nombre_registra }}</td>
+                <td class="mono">{{ reservacion.fecha_evento|date:"d/m/Y" }}</td>
+                <td class="mono">{{ reservacion.hora_inicio|time:"H:i" }}–{{ reservacion.hora_fin|time:"H:i" }}</td>
+                <td>{{ reservacion.asistentes }}</td>
+                <td>
+                  {% for sala in reservacion.salas.all %}{{ sala.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </td>
+                <td><span class="badge badge--{{ reservacion.estatus|lower }}">{{ reservacion.get_estatus_display }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
         </table>
+      </div>
     {% else %}
-        <p>No hay reservaciones registradas.</p>
+      <p class="empty">No hay reservaciones registradas todavía.</p>
     {% endif %}
-</body>
-</html>
+  </section>
+
+{% endblock %}

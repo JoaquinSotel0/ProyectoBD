@@ -1,28 +1,29 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Nueva reservación</title>
-</head>
-<body>
-    <h1>Nueva reservación</h1>
+{% extends "base.html" %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
+{% block title %}Nueva reservación{% endblock %}
+
+{% block content %}
+
+  <div class="form-card">
+    <span class="form-card__eyebrow">Reservación</span>
+    <h1 class="form-card__title">Nueva reservación</h1>
+
+    {% if not form.fields.salas.queryset.exists %}
+      <div class="field-hint">
+        Todavía no hay salas activas registradas. Antes de continuar, crea al menos una sala desde
+        <a href="/admin/" style="text-decoration: underline;">el panel de administración</a>.
+      </div>
     {% endif %}
 
-    <form method="post">
-        {% csrf_token %}
+    <form method="post" class="styled-form">
+      {% csrf_token %}
+      {{ form.as_p }}
 
-        {{ form.as_p }}
-
-        <button type="submit">Guardar reservación</button>
+      <div class="form-card__actions">
+        <button type="submit" class="btn btn--primary">Guardar reservación</button>
+        <a href="{% url 'lista_reservaciones' %}" class="btn btn--ghost">Cancelar</a>
+      </div>
     </form>
+  </div>
 
-    <p>
-        <a href="{% url 'lista_reservaciones' %}">Ver reservaciones</a>
-    </p>
-</body>
-</html>
+{% endblock %}
