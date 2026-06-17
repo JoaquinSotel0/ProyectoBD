@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle de reservación</title>
+</head>
+<body>
+    <h1>Detalle de reservación</h1>
+
+    <p><strong>Evento:</strong> {{ reservacion.nombre_evento }}</p>
+    <p><strong>Registra:</strong> {{ reservacion.nombre_registra }}</p>
+    <p><strong>Fecha:</strong> {{ reservacion.fecha_evento }}</p>
+    <p><strong>Horario:</strong> {{ reservacion.hora_inicio }} - {{ reservacion.hora_fin }}</p>
+    <p><strong>Asistentes:</strong> {{ reservacion.asistentes }}</p>
+    <p><strong>Estatus:</strong> {{ reservacion.estatus }}</p>
+    <p><strong>Observaciones:</strong> {{ reservacion.observaciones }}</p>
+
+    <h3>Salas</h3>
+    <ul>
+        {% for sala in reservacion.salas.all %}
+            <li>{{ sala.nombre }} - Capacidad: {{ sala.capacidad }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Requerimientos</h3>
+    {% if reservacion.requerimientos.all %}
+        <ul>
+            {% for requerimiento in reservacion.requerimientos.all %}
+                <li>{{ requerimiento.nombre }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Sin requerimientos.</p>
+    {% endif %}
+
+    <p>
+        <a href="{% url 'lista_reservaciones' %}">Volver a reservaciones</a>
+    </p>
+</body>
+</html>

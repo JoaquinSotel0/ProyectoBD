@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
@@ -41,4 +41,12 @@ def lista_reservaciones(request):
 
     return render(request, 'proyectobd/lista_reservaciones.html', {
         'reservaciones': reservaciones
+    })
+
+@login_required
+def detalle_reservacion(request, reservacion_id):
+    reservacion = get_object_or_404(Reservacion, id=reservacion_id)
+
+    return render(request, 'proyectobd/detalle_reservacion.html', {
+        'reservacion': reservacion
     })

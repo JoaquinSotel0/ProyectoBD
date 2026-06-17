@@ -33,7 +33,11 @@
             <tbody>
                 {% for reservacion in reservaciones %}
                     <tr>
-                        <td>{{ reservacion.nombre_evento }}</td>
+                        <td>
+                            <a href="{% url 'detalle_reservacion' reservacion.id %}">
+                                {{ reservacion.nombre_evento }}
+                            </a>
+                        </td>
                         <td>{{ reservacion.nombre_registra }}</td>
                         <td>{{ reservacion.fecha_evento }}</td>
                         <td>{{ reservacion.hora_inicio }} - {{ reservacion.hora_fin }}</td>
