@@ -9,9 +9,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Migraciones generadas
-# OJO: normalmente sí puedes subir migraciones.
-# Si tu profe quiere revisar la estructura de la BD, deja esta línea comentada.
 # proyectobd/migrations/
 
 # Variables de entorno / secretos
