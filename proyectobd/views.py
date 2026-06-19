@@ -47,6 +47,8 @@ def crear_reservacion(request):
 
 @login_required
 def lista_reservaciones(request):
+    Reservacion.finalizar_reservaciones_vencidas()
+
     reservaciones = Reservacion.objects.all().order_by('-fecha_evento', '-hora_inicio')
 
     hoy = timezone.localdate()

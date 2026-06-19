@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from datetime import time
+from django.utils import timezone
 
 
 class Sala(models.Model):
@@ -64,6 +65,17 @@ class Reservacion(models.Model):
 
         if self.fecha_evento.weekday() >= 5:
             raise ValidationError("Solo se permiten reservaciones de lunes a viernes.")
+
+    @classmethod
+    def finalizar_reservaciones_vencidas(cls):
+        ahora = timezone.localtime()
+        return cls.objects.filter(
+            estatus='CONFIRMADA',
+            fecha_evento__lte=ahora.date(),
+        ).exclude(
+            fecha_evento=ahora.date(),
+            hora_fin__gt=ahora.time(),
+        ).update(estatus='FINALIZADA')
 
     def __str__(self):
         return self.nombre_evento
