@@ -51,43 +51,56 @@
 
   <section class="panel">
     <div class="panel__header">
-      <h2>Listado completo</h2>
+      <div>
+        <h2>Desglose semanal</h2>
+        <p class="empty">Semana del {{ inicio_semana|date:"d/m/Y" }} al {{ fin_semana|date:"d/m/Y" }} · Bloques de 1 hora</p>
+      </div>
+      <div class="board__nav">
+        <a href="?year={{ anio }}&month={{ mes }}&week={{ semana_anterior|date:'Y-m-d' }}" class="board__navbtn" aria-label="Semana anterior">&larr;</a>
+        <a href="?year={{ anio }}&month={{ mes }}&week={{ hoy|date:'Y-m-d' }}" class="board__navbtn board__navbtn--today">Semana actual</a>
+        <a href="?year={{ anio }}&month={{ mes }}&week={{ semana_siguiente|date:'Y-m-d' }}" class="board__navbtn" aria-label="Semana siguiente">&rarr;</a>
+      </div>
     </div>
 
-    {% if reservaciones %}
-      <div class="table-wrap">
-        <table class="board-table">
-          <thead>
-            <tr>
-              <th>Evento</th>
-              <th>Registra</th>
-              <th>Fecha</th>
-              <th>Horario</th>
-              <th>Asistentes</th>
-              <th>Salas</th>
-              <th>Estatus</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for reservacion in reservaciones %}
-              <tr>
-                <td><a href="{% url 'detalle_reservacion' reservacion.id %}">{{ reservacion.nombre_evento }}</a></td>
-                <td>{{ reservacion.nombre_registra }}</td>
-                <td class="mono">{{ reservacion.fecha_evento|date:"d/m/Y" }}</td>
-                <td class="mono">{{ reservacion.hora_inicio|time:"H:i" }}–{{ reservacion.hora_fin|time:"H:i" }}</td>
-                <td>{{ reservacion.asistentes }}</td>
-                <td>
-                  {% for sala in reservacion.salas.all %}{{ sala.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                </td>
-                <td><span class="badge badge--{{ reservacion.estatus|lower }}">{{ reservacion.get_estatus_display }}</span></td>
-              </tr>
+    <div class="table-wrap">
+      <table class="board-table weekly-table">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            {% for dia in dias_semana %}
+              <th>{{ dia|date:"D d/m" }}</th>
             {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="empty">No hay reservaciones registradas todavía.</p>
-    {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in calendario_semanal %}
+            <tr>
+              <td class="mono">{{ fila.hora|time:"H:i" }}</td>
+              {% for celda in fila.dias %}
+                <td>
+                  {% if celda.reservaciones %}
+                    {% for r in celda.reservaciones %}
+                      <a href="{% url 'detalle_reservacion' r.id %}"
+                         class="chip chip--{{ r.estatus|lower }}"
+                         title="{{ r.hora_inicio|time:'H:i' }}–{{ r.hora_fin|time:'H:i' }} · {{ r.nombre_evento }}">
+                        <span class="chip__time">{{ r.hora_inicio|time:"H:i" }}–{{ r.hora_fin|time:"H:i" }}</span>
+                        <span class="chip__name">{{ r.nombre_evento }}</span>
+                      </a>
+                      <div class="empty">
+                        {% for sala in r.salas.all %}{{ sala.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                      </div>
+                    {% endfor %}
+                  {% else %}
+                    <span class="empty">Disponible</span>
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </section>
+
 
 {% endblock %}

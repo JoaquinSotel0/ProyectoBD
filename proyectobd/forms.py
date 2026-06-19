@@ -1,6 +1,11 @@
 from django import forms
 from .models import Reservacion, Sala, Requerimiento
+from datetime import time
 
+HORARIOS_RESERVA = [
+    (time(hora, 0), f'{hora:02d}:00')
+    for hora in range(8, 21)
+]
 
 class ReservacionForm(forms.ModelForm):
     class Meta:
@@ -14,12 +19,13 @@ class ReservacionForm(forms.ModelForm):
             'asistentes',
             'salas',
             'requerimientos',
+            'acomodo_sillas',
             'observaciones',
         ]
         widgets = {
             'nombre_registra': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Nombre de quien registra',
+                'placeholder': 'Nombre del solicitante',
             }),
             'nombre_evento': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -29,13 +35,11 @@ class ReservacionForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'date',
             }),
-            'hora_inicio': forms.TimeInput(attrs={
+            'hora_inicio': forms.Select(attrs={
                 'class': 'form-control',
-                'type': 'time',
             }),
-            'hora_fin': forms.TimeInput(attrs={
+            'hora_fin': forms.Select(attrs={
                 'class': 'form-control',
-                'type': 'time',
             }),
             'asistentes': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -43,6 +47,9 @@ class ReservacionForm(forms.ModelForm):
             }),
             'salas': forms.CheckboxSelectMultiple(),
             'requerimientos': forms.CheckboxSelectMultiple(),
+            'acomodo_sillas': forms.Select(attrs={
+                'class': 'form-control',
+            }),
             'observaciones': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
@@ -50,7 +57,7 @@ class ReservacionForm(forms.ModelForm):
             }),
         }
         labels = {
-            'nombre_registra': 'Nombre de quien registra',
+            'nombre_registra': 'Nombre del solicitante',
             'nombre_evento': 'Nombre del evento',
             'fecha_evento': 'Fecha del evento',
             'hora_inicio': 'Hora de inicio',
@@ -58,6 +65,7 @@ class ReservacionForm(forms.ModelForm):
             'asistentes': 'Número de asistentes',
             'salas': 'Salas solicitadas',
             'requerimientos': 'Requerimientos',
+            'acomodo_sillas': 'Acomodo de sillas',
             'observaciones': 'Observaciones',
         }
 
@@ -67,6 +75,8 @@ class ReservacionForm(forms.ModelForm):
         self.fields['requerimientos'].queryset = Requerimiento.objects.order_by('nombre')
         self.fields['requerimientos'].required = False
         self.fields['observaciones'].required = False
+        self.fields['hora_inicio'].widget.choices = HORARIOS_RESERVA[:-1]
+        self.fields['hora_fin'].widget.choices = HORARIOS_RESERVA[1:]
 
     def clean(self):
         cleaned_data = super().clean()
@@ -78,6 +88,17 @@ class ReservacionForm(forms.ModelForm):
 
         if hora_inicio and hora_fin and hora_fin <= hora_inicio:
             raise forms.ValidationError('La hora de fin debe ser posterior a la hora de inicio.')
+
+        if hora_inicio and hora_inicio.minute != 0:
+            raise forms.ValidationError('La hora de inicio debe seleccionarse en bloques exactos de una hora.')
+
+        if hora_fin and hora_fin.minute != 0:
+            raise forms.ValidationError('La hora de fin debe seleccionarse en bloques exactos de una hora.')
+
+        if hora_inicio and hora_fin:
+            duracion_horas = hora_fin.hour - hora_inicio.hour
+            if duracion_horas < 1:
+                raise forms.ValidationError('La reservación debe durar al menos una hora completa.')
 
         if asistentes and salas:
             capacidad_total = sum(sala.capacidad for sala in salas)

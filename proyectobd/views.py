@@ -1,5 +1,5 @@
 from calendar import Calendar
-from datetime import date, timedelta
+from datetime import date, timedelta, time
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -50,6 +50,7 @@ def lista_reservaciones(request):
     reservaciones = Reservacion.objects.all().order_by('-fecha_evento', '-hora_inicio')
 
     hoy = timezone.localdate()
+    semana_param = request.GET.get('week')
 
     try:
         anio = int(request.GET.get('year', hoy.year))
@@ -77,6 +78,52 @@ def lista_reservaciones(request):
         fecha_evento__year=anio,
         fecha_evento__month=mes,
     ).order_by('hora_inicio')
+
+    if semana_param:
+        try:
+            fecha_base_semana = date.fromisoformat(semana_param)
+        except ValueError:
+            fecha_base_semana = hoy
+    else:
+        fecha_base_semana = hoy
+
+    inicio_semana = fecha_base_semana - timedelta(days=fecha_base_semana.weekday())
+    fin_semana = inicio_semana + timedelta(days=4)
+    semana_anterior = inicio_semana - timedelta(days=7)
+    semana_siguiente = inicio_semana + timedelta(days=7)
+
+    horas_semana = [time(hora, 0) for hora in range(8, 20)]
+    dias_semana = [inicio_semana + timedelta(days=i) for i in range(5)]
+
+    reservaciones_semana = Reservacion.objects.filter(
+        fecha_evento__range=(inicio_semana, fin_semana),
+    ).order_by('fecha_evento', 'hora_inicio')
+
+    calendario_semanal = []
+
+    for hora_bloque in horas_semana:
+        fila = {
+            'hora': hora_bloque,
+            'dias': []
+        }
+
+        for dia_semana in dias_semana:
+            eventos_bloque = []
+
+            for reservacion in reservaciones_semana:
+                if (
+                    reservacion.fecha_evento == dia_semana
+                    and reservacion.hora_inicio <= hora_bloque
+                    and reservacion.hora_fin > hora_bloque
+                ):
+                    eventos_bloque.append(reservacion)
+
+            fila['dias'].append({
+                'fecha': dia_semana,
+                'reservaciones': eventos_bloque,
+            })
+
+        calendario_semanal.append(fila)
 
     reservaciones_por_dia = {}
     for r in reservaciones_mes:
@@ -108,6 +155,12 @@ def lista_reservaciones(request):
         'mes_anterior': mes_anterior,
         'mes_siguiente': mes_siguiente,
         'hoy': hoy,
+        'inicio_semana': inicio_semana,
+        'fin_semana': fin_semana,
+        'dias_semana': dias_semana,
+        'calendario_semanal': calendario_semanal,
+        'semana_anterior': semana_anterior,
+        'semana_siguiente': semana_siguiente,
     })
 
 
